@@ -22,9 +22,9 @@ change that.
 You could also start a camera when a player is sitting on some benches where the default camera 
 would usually glitch into the player.
 
-Preview:
+Showcase video:
 
-
+https://www.youtube.com/watch?v=IrrPiBaRS18
 
 
 ## Features
