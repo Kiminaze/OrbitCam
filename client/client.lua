@@ -64,7 +64,8 @@ end
 function UpdateCamPosition(position, entity, _minRadius, _maxRadius)
 	if (entity) then
 		trackedEntity = entity
-		camFocusPoint = GetEntityCoords(trackedEntity) + position
+		entityOffset = position
+		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
 	else
 		camFocusPoint = position
 	end
