@@ -1,138 +1,64 @@
 
+local math_cos, math_sin, math_min, math_max, table_insert = math.cos, math.sin, math.min, math.max, table.insert
+local tinyPi <const> = math.pi / 180.0
+
 -- init default camera values
 local cam			= nil
 local trackedEntity	= nil
 local camFocusPoint	= vector3(0, 0, 0)
 local entityOffset	= nil
 
-local minRadius, maxRadius	= Config.minRadius, Config.maxRadius
+local minRadius, maxRadius	= defaultMinRadius, defaultMaxRadius
 local currentRadius			= (minRadius + maxRadius) * 0.5
 
 local angleY, angleZ = 0.0, 0.0
 
--- list of controls that should be disabled during camera
+-- list of controls that should be disabled during camera operation
 local disabledControls = { 14, 15, 16, 17, 81, 82, 99 }
 
 
 
--- start camera
-function StartOrbitCam(position, entity, _minRadius, _maxRadius)
-	-- set new focus point
-	ClearFocus()
-	if (entity) then
-		trackedEntity = entity
-		entityOffset = position
-		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
-	else
-		camFocusPoint = position
-	end
-
-	minRadius = _minRadius or Config.minRadius
-	maxRadius = _maxRadius or Config.maxRadius
-
-	local rot = GetGameplayCamRot(2)
-	angleY = -rot.x
-	angleZ = rot.z - 90
-
-	-- setup camera
-	cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", camFocusPoint, 0, 0, 0, GetGameplayCamFov())
-	SetCamActive(cam, true)
-	RenderScriptCams(true, true, Config.transitionSpeed, true, false)
-
-	-- start camera processing
-	Citizen.CreateThread(function()
-		while (cam ~= nil) do
-			ProcessCamControls()
-
-			Citizen.Wait(0)
-		end
-	end)
+-- raycast - need instant result, no async possible
+local function RayCast(from, to, ignoreEntity)
+	local _, hit, hitPosition = GetShapeTestResult(StartExpensiveSynchronousShapeTestLosProbe(from.x, from.y, from.z, to.x, to.y, to.z, -1, ignoreEntity, 2))
+	return hit, hitPosition
 end
 
--- destroy camera
-function EndOrbitCam()
-	ClearFocus()
-
-	RenderScriptCams(false, true, Config.transitionSpeed, true, false)
-	DestroyCam(cam, false)
-
-	cam = nil
-	trackedEntity = nil
-end
-
--- update camera focus position
-function UpdateCamPosition(position, entity, _minRadius, _maxRadius)
-	if (entity) then
-		trackedEntity = entity
-		entityOffset = position
-		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
-	else
-		camFocusPoint = position
-	end
-
-	minRadius = _minRadius or Config.minRadius
-	maxRadius = _maxRadius or Config.maxRadius
-end
-
-
-
--- process camera controls
-function ProcessCamControls()
-	-- disable 1st person and some controls
-	DisableFirstPersonCamThisFrame()
-	for i, control in ipairs(disabledControls) do
-		DisableControlAction(0, control, true)
-	end
-
-	-- calculate new position
-	local newPos = ProcessNewPosition()
-
-	-- set position of cam and focus
-	SetCamCoord(cam, newPos)
-	PointCamAtCoord(cam, camFocusPoint)
-	SetFocusPosAndVel(camFocusPoint, 0.0, 0.0, 0.0)
-end
-
-function ProcessNewPosition()
+local function ProcessNewPosition()
 	-- calculate angle from player camera input
-	local speedMult = IsInputDisabled(0) and Config.mouseSpeed or Config.controllerSpeed
+	local speedMult = IsInputDisabled(0) and mouseSpeed or controllerSpeed
 	angleZ = angleZ - GetDisabledControlUnboundNormal(1, 1) * speedMult	-- around Z axis (left / right)
-	angleY = angleY + GetDisabledControlUnboundNormal(1, 2) * speedMult	-- around Y axis (up / down)
-	angleY = math.max(math.min(angleY, 89.0), -89.0)				-- limit up / down angle to 90°
+	angleY = angleY + GetDisabledControlUnboundNormal(1, 2) * speedMult -- around Y axis (up / down)
+	angleY = math_max(math_min(angleY, 89.0), -89.0)				-- limit up / down angle to less than 90°
 
 	-- calculate orbit height
-	currentRadius = currentRadius + (GetDisabledControlNormal(0, 16) - GetDisabledControlNormal(0, 17)) * Config.radiusStepLength
-	currentRadius = math.max(math.min(currentRadius, maxRadius), minRadius)
+	currentRadius = currentRadius + (GetDisabledControlNormal(0, 16) - GetDisabledControlNormal(0, 17)) * radiusStepLength
+	currentRadius = math_max(math_min(currentRadius, maxRadius), minRadius)
 
 	if (trackedEntity and DoesEntityExist(trackedEntity)) then
 		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
 	end
 	
 	-- do the thing with the math (calculate the orbit position)
-	local cosY = Cos(angleY)
-	local offset = vector3(Cos(angleZ) * cosY, Sin(angleZ) * cosY, Sin(angleY)) * currentRadius
+	local cosY = math_cos(angleY * tinyPi)
+	local offset = vector3(math_cos(angleZ * tinyPi) * cosY, math_sin(angleZ * tinyPi) * cosY, math_sin(angleY * tinyPi)) * currentRadius
 
 	local newPos = camFocusPoint + offset
 
 	local ignoreEnt = trackedEntity or PlayerPedId()
+	-- use raycasts to the new position offset by the cameras near clip planes' corners
+	local right, _, up = GetCamMatrix(cam)
+	local verticalOffset, horizontalOffset = right * 0.125, up * 0.07
 	local rayCastResults = {}
-	if (Config.usePreciseMethod) then
-		-- use raycasts to the new position offset by the cameras near clip planes' corners
-		local right, forward, up, currentCamPos = GetCamMatrix(cam)
-		local vertOffset, horiOffset = right * 0.125, up * 0.07
-		table.insert(rayCastResults, { RayCast(camFocusPoint, newPos + vertOffset + horiOffset, ignoreEnt) })
-		table.insert(rayCastResults, { RayCast(camFocusPoint, newPos + vertOffset - horiOffset, ignoreEnt) })
-		table.insert(rayCastResults, { RayCast(camFocusPoint, newPos - vertOffset - horiOffset, ignoreEnt) })
-		table.insert(rayCastResults, { RayCast(camFocusPoint, newPos - vertOffset + horiOffset, ignoreEnt) })
-	else
-		-- use a single raycast to the new position
-		table.insert(rayCastResults, { RayCast(camFocusPoint, newPos, ignoreEnt) })
-	end
+	rayCastResults[1] = { RayCast(camFocusPoint, newPos + verticalOffset + horizontalOffset, ignoreEnt) }
+	rayCastResults[2] = { RayCast(camFocusPoint, newPos + verticalOffset - horizontalOffset, ignoreEnt) }
+	rayCastResults[3] = { RayCast(camFocusPoint, newPos - verticalOffset - horizontalOffset, ignoreEnt) }
+	rayCastResults[4] = { RayCast(camFocusPoint, newPos - verticalOffset + horizontalOffset, ignoreEnt) }
 
 	local radius = currentRadius
-	for i, rayCastResult in ipairs(rayCastResults) do
-		if (rayCastResult[1]) then
-			local dist = #(camFocusPoint - rayCastResult[2])
+	for i = 1, #rayCastResults do
+		if (rayCastResults[i][1]) then
+			local dist = #(camFocusPoint - rayCastResults[i][2])
 			if (dist < radius) then
 				radius = dist
 			end
@@ -145,15 +71,127 @@ function ProcessNewPosition()
 	return camFocusPoint + offset
 end
 
--- need instant result, no async possible / shorten function call
-function RayCast(from, to, ignoreEntity)
-	local _, hit, hitPosition = GetShapeTestResult(StartExpensiveSynchronousShapeTestLosProbe(from, to, -1, ignoreEntity, 0))
-	return hit, hitPosition
+-- process camera controls
+local function ProcessCamControls()
+	-- disable 1st person and some controls
+	DisableFirstPersonCamThisFrame()
+	for i, control in ipairs(disabledControls) do
+		DisableControlAction(0, control, true)
+	end
+
+	-- calculate new position
+	local newPos = ProcessNewPosition()
+
+	-- set position of cam and focus
+	SetCamCoord(cam, newPos.x, newPos.y, newPos.z)
+	PointCamAtCoord(cam, camFocusPoint.x, camFocusPoint.y, camFocusPoint.z)
+	SetFocusPosAndVel(camFocusPoint.x, camFocusPoint.y, camFocusPoint.z, 0.0, 0.0, 0.0)
+end
+
+local function LogError(text, ...)
+	print(("^1[ERROR] %s^0"):format(text):format(...))
 end
 
 
 
--- define exports
+-- start camera
+function StartOrbitCam(position, entity, _minRadius, _maxRadius, transitionSpeed)
+	if (cam) then
+		LogError("There is already an active camera!")
+		return
+	end
+
+	-- set new focus point
+	ClearFocus()
+	if (entity) then
+		trackedEntity = entity
+		entityOffset = position
+		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
+	else
+		camFocusPoint = position
+	end
+
+	minRadius = _minRadius or defaultMinRadius
+	maxRadius = _maxRadius or defaultMaxRadius
+	currentRadius = (minRadius + maxRadius) * 0.5
+
+	local rot = GetGameplayCamRot(2)
+	angleY = -rot.x
+	angleZ = rot.z - 90
+
+	-- setup camera
+	cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", camFocusPoint.x, camFocusPoint.y, camFocusPoint.z, 0, 0, 0, GetGameplayCamFov())
+	SetCamActive(cam, true)
+	RenderScriptCams(true, true, transitionSpeed or defaultTransitionSpeed, true, false)
+
+	SetCamNearClip(cam, 0.05)
+
+	TriggerEvent("OrbitCam:camStarted", position, entity)
+
+	-- start camera processing
+	CreateThread(function()
+		while (cam ~= nil) do
+			ProcessCamControls()
+
+			Wait(0)
+		end
+	end)
+end
 exports("StartOrbitCam", StartOrbitCam)
-exports("UpdateCamPosition", UpdateCamPosition)
+
+-- destroy camera
+function EndOrbitCam(transitionSpeed)
+	if (cam == nil) then
+		LogError("There is no active camera!")
+		return
+	end
+
+	ClearFocus()
+
+	RenderScriptCams(false, true, transitionSpeed or defaultTransitionSpeed, true, false)
+	DestroyCam(cam, false)
+
+	cam = nil
+	trackedEntity = nil
+
+	TriggerEvent("OrbitCam:camStopped")
+end
 exports("EndOrbitCam", EndOrbitCam)
+
+-- update camera focus position
+function UpdateCamPosition(position, entity, _minRadius, _maxRadius)
+	if (cam == nil) then
+		LogError("There is no active camera!")
+		return
+	end
+
+	if (entity) then
+		trackedEntity = entity
+		entityOffset = position
+		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
+	else
+		camFocusPoint = position
+	end
+
+	minRadius = _minRadius or defaultMinRadius
+	maxRadius = _maxRadius or defaultMaxRadius
+end
+exports("UpdateCamPosition", UpdateCamPosition)
+
+-- check if orbit cam is active
+function IsOrbitCamActive()
+	return cam ~= nil
+end
+exports("IsOrbitCamActive", IsOrbitCamActive)
+
+-- check if entity is being tracked
+function IsEntityBeingTracked(entity)
+	return entity and entity == trackedEntity or trackedEntity ~= nil
+end
+exports("IsEntityBeingTracked", IsEntityBeingTracked)
+
+-- get entity being tracked
+function GetTrackedEntity()
+	return trackedEntity
+end
+exports("GetTrackedEntity", GetTrackedEntity)
