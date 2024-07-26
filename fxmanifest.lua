@@ -13,5 +13,6 @@ client_scripts {
 	"config.lua",
 
 	"client/client.lua",
-	"client/cameras.lua"
+
+	"cameras/*.lua"
 }
