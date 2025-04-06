@@ -1,4 +1,6 @@
 ﻿
+if (not deathCam) then return end
+
 local orbitCam = exports["OrbitCam"]
 
 -- Toggle orbit cam when the player dies.
