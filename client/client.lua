@@ -192,7 +192,10 @@ exports("UpdateCamPosition", UpdateCamPosition)
 
 -- set automatic orbit speed
 local function SetAutoOrbitSpeed(speed)
-	assert(speed == nil or (speed and type(speed) == "number"), "Parameter \"speed\" needs to be a number or nil to reset!")
+	if (speed ~= nil and type(speed) ~= "number") then
+		LogError("Parameter \"speed\" needs to be a number or nil to reset!")
+		return
+	end
 
 	autoOrbit = speed
 end
