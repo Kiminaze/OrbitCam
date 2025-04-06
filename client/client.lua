@@ -165,6 +165,7 @@ local function EndOrbitCam(transitionSpeed)
 
 	cam = nil
 	trackedEntity = nil
+	autoOrbit = nil
 
 	TriggerEvent("OrbitCam:camStopped")
 end
