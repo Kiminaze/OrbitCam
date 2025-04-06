@@ -28,7 +28,7 @@ local disabledControls = { 14, 15, 16, 17, 81, 82, 99 }
 
 -- raycast - need instant result, no async possible
 local function RayCast(from, to, ignoreEntity)
-	local _, hit, hitPosition = GetShapeTestResult(StartExpensiveSynchronousShapeTestLosProbe(from.x, from.y, from.z, to.x, to.y, to.z, -1, ignoreEntity, 2))
+	local _, hit, hitPosition = GetShapeTestResult(StartExpensiveSynchronousShapeTestLosProbe(from.x, from.y, from.z, to.x, to.y, to.z, 19, ignoreEntity, 2))
 	return hit, hitPosition
 end
 
