@@ -1,4 +1,4 @@
-﻿
+
 -- localise frequently used Lua globals
 local math_cos, math_sin, math_min, math_max, table_insert = math.cos, math.sin, math.min, math.max, table.insert
 local tinyPi <const> = math.pi / 180.0

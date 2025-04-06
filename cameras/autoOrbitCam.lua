@@ -1,4 +1,4 @@
-﻿
+
 if (not autoOrbitCam) then return end
 
 -- key binding (see https://docs.fivem.net/docs/game-references/input-mapper-parameter-ids/)

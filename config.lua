@@ -1,4 +1,4 @@
-﻿
+
 -- default min and max radius the camera will orbit at (in meters)
 defaultMinRadius = 2.0
 defaultMaxRadius = 7.0

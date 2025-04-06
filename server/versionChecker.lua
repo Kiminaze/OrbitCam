@@ -1,4 +1,4 @@
-﻿
+
 local AUTHOR <const>		= "Kiminaze"
 local RESOURCE_NAME <const>	= "OrbitCam"
 local GITHUB_URL <const>	= "https://api.github.com/repos/%s/%s/releases/latest"

@@ -1,4 +1,4 @@
-﻿
+
 if (not deathCam) then return end
 
 local orbitCam = exports["OrbitCam"]
