@@ -1,4 +1,4 @@
-
+﻿
 local math_cos, math_sin, math_min, math_max, table_insert = math.cos, math.sin, math.min, math.max, table.insert
 local tinyPi <const> = math.pi / 180.0
 
@@ -7,6 +7,7 @@ local cam			= nil
 local trackedEntity	= nil
 local camFocusPoint	= vector3(0, 0, 0)
 local entityOffset	= nil
+local autoOrbit		= nil
 
 local minRadius, maxRadius	= defaultMinRadius, defaultMaxRadius
 local currentRadius			= (minRadius + maxRadius) * 0.5
@@ -27,9 +28,13 @@ end
 local function ProcessNewPosition()
 	-- calculate angle from player camera input
 	local speedMult = IsInputDisabled(0) and mouseSpeed or controllerSpeed
-	angleZ = angleZ - GetDisabledControlUnboundNormal(1, 1) * speedMult	-- around Z axis (left / right)
-	angleY = angleY + GetDisabledControlUnboundNormal(1, 2) * speedMult -- around Y axis (up / down)
-	angleY = math_max(math_min(angleY, 89.0), -89.0)				-- limit up / down angle to less than 90°
+	if (not autoOrbit) then
+		angleZ = angleZ - GetDisabledControlUnboundNormal(1, 1) * speedMult	-- around Z axis (left / right)
+	else
+		angleZ = angleZ - autoOrbit											-- around Z axis (left / right) (with autoOrbit)
+	end
+	angleY = angleY + GetDisabledControlUnboundNormal(1, 2) * speedMult		-- around Y axis (up / down)
+	angleY = math_max(math_min(angleY, 89.0), -89.0)						-- limit up / down angle to less than 90°
 
 	-- calculate orbit height
 	currentRadius = currentRadius + (GetDisabledControlNormal(0, 16) - GetDisabledControlNormal(0, 17)) * radiusStepLength
@@ -177,6 +182,14 @@ function UpdateCamPosition(position, entity, _minRadius, _maxRadius)
 	maxRadius = _maxRadius or defaultMaxRadius
 end
 exports("UpdateCamPosition", UpdateCamPosition)
+
+-- set automatic orbit speed
+function SetAutoOrbitSpeed(speed)
+	assert(speed == nil or (speed and type(speed) == "number"), "Parameter \"speed\" needs to be a number or nil to reset!")
+
+	autoOrbit = speed
+end
+exports("SetAutoOrbitSpeed", SetAutoOrbitSpeed)
 
 -- check if orbit cam is active
 function IsOrbitCamActive()
