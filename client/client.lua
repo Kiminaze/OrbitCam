@@ -100,7 +100,7 @@ end
 
 
 -- start camera
-function StartOrbitCam(position, entity, _minRadius, _maxRadius, transitionSpeed)
+local function StartOrbitCam(position, entity, _minRadius, _maxRadius, transitionSpeed)
 	if (cam) then
 		LogError("There is already an active camera!")
 		return
@@ -145,7 +145,7 @@ end
 exports("StartOrbitCam", StartOrbitCam)
 
 -- destroy camera
-function EndOrbitCam(transitionSpeed)
+local function EndOrbitCam(transitionSpeed)
 	if (cam == nil) then
 		LogError("There is no active camera!")
 		return
@@ -164,7 +164,7 @@ end
 exports("EndOrbitCam", EndOrbitCam)
 
 -- update camera focus position
-function UpdateCamPosition(position, entity, _minRadius, _maxRadius)
+local function UpdateCamPosition(position, entity, _minRadius, _maxRadius)
 	if (cam == nil) then
 		LogError("There is no active camera!")
 		return
@@ -184,7 +184,7 @@ end
 exports("UpdateCamPosition", UpdateCamPosition)
 
 -- set automatic orbit speed
-function SetAutoOrbitSpeed(speed)
+local function SetAutoOrbitSpeed(speed)
 	assert(speed == nil or (speed and type(speed) == "number"), "Parameter \"speed\" needs to be a number or nil to reset!")
 
 	autoOrbit = speed
@@ -192,19 +192,19 @@ end
 exports("SetAutoOrbitSpeed", SetAutoOrbitSpeed)
 
 -- check if orbit cam is active
-function IsOrbitCamActive()
+local function IsOrbitCamActive()
 	return cam ~= nil
 end
 exports("IsOrbitCamActive", IsOrbitCamActive)
 
 -- check if entity is being tracked
-function IsEntityBeingTracked(entity)
+local function IsEntityBeingTracked(entity)
 	return entity and entity == trackedEntity or trackedEntity ~= nil
 end
 exports("IsEntityBeingTracked", IsEntityBeingTracked)
 
 -- get entity being tracked
-function GetTrackedEntity()
+local function GetTrackedEntity()
 	return trackedEntity
 end
 exports("GetTrackedEntity", GetTrackedEntity)
