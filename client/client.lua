@@ -1,6 +1,13 @@
 ﻿
+-- localise frequently used Lua globals
 local math_cos, math_sin, math_min, math_max, table_insert = math.cos, math.sin, math.min, math.max, table.insert
 local tinyPi <const> = math.pi / 180.0
+
+-- localise frequently used natives
+local GetShapeTestResult, StartExpensiveSynchronousShapeTestLosProbe, IsInputDisabled, GetDisabledControlUnboundNormal, GetDisabledControlNormal, DoesEntityExist, 
+GetEntityCoords, PlayerPedId, GetCamMatrix, DisableFirstPersonCamThisFrame, DisableControlAction, SetCamCoord, PointCamAtCoord, SetFocusPosAndVel
+= GetShapeTestResult, StartExpensiveSynchronousShapeTestLosProbe, IsInputDisabled, GetDisabledControlUnboundNormal, GetDisabledControlNormal, DoesEntityExist, 
+GetEntityCoords, PlayerPedId, GetCamMatrix, DisableFirstPersonCamThisFrame, DisableControlAction, SetCamCoord, PointCamAtCoord, SetFocusPosAndVel
 
 -- init default camera values
 local cam			= nil
