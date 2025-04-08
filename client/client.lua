@@ -107,7 +107,7 @@ end
 
 
 -- start camera
-local function StartOrbitCam(position, entity, _minRadius, _maxRadius, transitionSpeed)
+local function StartOrbitCam(position, entity, _minRadius, _maxRadius, transitionSpeed, entityBone)
 	if (cam) then
 		LogError("There is already an active camera!")
 		return
@@ -116,9 +116,16 @@ local function StartOrbitCam(position, entity, _minRadius, _maxRadius, transitio
 	-- set new focus point
 	ClearFocus()
 	if (entity) then
-		trackedEntity = entity
-		entityOffset = position
-		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
+		if (not entityBone) then
+			trackedEntity = entity
+			entityOffset = position
+			camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
+		else
+			trackedEntity = entity
+			trackedEntityBone = entityBone
+			entityOffset = position
+			camFocusPoint = GetWorldPositionOfEntityBone(trackedEntity, trackedEntityBone) + entityOffset
+		end
 	else
 		camFocusPoint = position
 	end
@@ -172,16 +179,23 @@ end
 exports("EndOrbitCam", EndOrbitCam)
 
 -- update camera focus position
-local function UpdateCamPosition(position, entity, _minRadius, _maxRadius)
+local function UpdateCamPosition(position, entity, _minRadius, _maxRadius, entityBone)
 	if (cam == nil) then
 		LogError("There is no active camera!")
 		return
 	end
 
 	if (entity) then
-		trackedEntity = entity
-		entityOffset = position
-		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
+		if (not entityBone) then
+			trackedEntity = entity
+			entityOffset = position
+			camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
+		else
+			trackedEntity = entity
+			trackedEntityBone = entityBone
+			entityOffset = position
+			camFocusPoint = GetWorldPositionOfEntityBone(trackedEntity, trackedEntityBone) + entityOffset
+		end
 	else
 		camFocusPoint = position
 	end
