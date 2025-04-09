@@ -10,11 +10,12 @@ GetEntityCoords, PlayerPedId, GetCamMatrix, DisableFirstPersonCamThisFrame, Disa
 GetEntityCoords, PlayerPedId, GetCamMatrix, DisableFirstPersonCamThisFrame, DisableControlAction, SetCamCoord, PointCamAtCoord, SetFocusPosAndVel
 
 -- init default camera values
-local cam			= nil
-local trackedEntity	= nil
-local camFocusPoint	= vector3(0, 0, 0)
-local entityOffset	= nil
-local autoOrbit		= nil
+local cam				= nil
+local trackedEntity		= nil
+local trackedEntityBone	= nil
+local camFocusPoint		= vector3(0, 0, 0)
+local entityOffset		= nil
+local autoOrbit			= nil
 
 local minRadius, maxRadius	= defaultMinRadius, defaultMaxRadius
 local currentRadius			= (minRadius + maxRadius) * 0.5
@@ -48,7 +49,11 @@ local function ProcessNewPosition()
 	currentRadius = math_max(math_min(currentRadius, maxRadius), minRadius)
 
 	if (trackedEntity and DoesEntityExist(trackedEntity)) then
-		camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
+		if (not trackedEntityBone) then
+			camFocusPoint = GetEntityCoords(trackedEntity) + entityOffset
+		else
+			camFocusPoint = GetWorldPositionOfEntityBone(trackedEntity, trackedEntityBone) + entityOffset
+		end
 	end
 	
 	-- do the thing with the math (calculate the orbit position)
@@ -172,6 +177,7 @@ local function EndOrbitCam(transitionSpeed)
 
 	cam = nil
 	trackedEntity = nil
+	trackedEntityBone = nil
 	autoOrbit = nil
 
 	TriggerEvent("OrbitCam:camStopped")
@@ -230,6 +236,6 @@ exports("IsEntityBeingTracked", IsEntityBeingTracked)
 
 -- get entity being tracked
 local function GetTrackedEntity()
-	return trackedEntity
+	return trackedEntity, trackedEntityBone
 end
 exports("GetTrackedEntity", GetTrackedEntity)
