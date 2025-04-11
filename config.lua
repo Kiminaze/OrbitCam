@@ -16,5 +16,5 @@ controllerSpeed	= 1.5
 -- auto toggles the camera when the player is dead (only works when using the baseevents resource)
 deathCam = true
 
--- start an automatic orbit cam via button press (see autoOrbitCam.lua for details)
+-- start an automatic orbit cam via command (see autoOrbitCam.lua for details)
 autoOrbitCam = false
