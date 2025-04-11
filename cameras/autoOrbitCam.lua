@@ -28,5 +28,5 @@ RegisterCommand("autoorbit", function(src, args, raw)
 	end
 
 	orbitCam:StartOrbitCam(offset or DEFAULT_OFFSET, ped, nil, nil, nil, boneIndex)
-	orbitCam:SetAutoOrbitSpeed(tonumber(args[5]) or DEFAULT_ORBIT_SPEED)
+	orbitCam:SetAutoOrbitSpeed(tonumber(args[5]) or DEFAULT_ORBIT_SPEED, tonumber(args[6]) == 1 or nil)
 end, false)

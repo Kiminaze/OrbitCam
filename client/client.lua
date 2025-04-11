@@ -16,6 +16,7 @@ local trackedEntityBone	= nil
 local camFocusPoint		= vector3(0, 0, 0)
 local entityOffset		= nil
 local autoOrbit			= nil
+local disableControls	= nil
 
 local minRadius, maxRadius	= defaultMinRadius, defaultMaxRadius
 local currentRadius			= (minRadius + maxRadius) * 0.5
@@ -34,18 +35,23 @@ local function RayCast(from, to, ignoreEntity)
 end
 
 local function ProcessNewPosition()
-	-- calculate angle from player camera input
-	local speedMult = IsInputDisabled(0) and mouseSpeed or controllerSpeed
-	if (not autoOrbit) then
-		angleZ = angleZ - GetDisabledControlUnboundNormal(1, 1) * speedMult	-- around Z axis (left / right)
-	else
-		angleZ = angleZ - autoOrbit											-- around Z axis (left / right) (with autoOrbit)
-	end
-	angleY = angleY + GetDisabledControlUnboundNormal(1, 2) * speedMult		-- around Y axis (up / down)
-	angleY = math_max(math_min(angleY, 89.0), -89.0)						-- limit up / down angle to less than 90°
+	if (not disableControls) then
+		-- calculate angle from player camera input
+		local speedMult = IsInputDisabled(0) and mouseSpeed or controllerSpeed
+		if (not autoOrbit) then
+			angleZ = angleZ - GetDisabledControlUnboundNormal(1, 1) * speedMult	-- around Z axis (left / right)
+		else
+			angleZ = angleZ - autoOrbit											-- around Z axis (left / right) (with autoOrbit)
+		end
+		angleY = angleY + GetDisabledControlUnboundNormal(1, 2) * speedMult		-- around Y axis (up / down)
+		angleY = math_max(math_min(angleY, 89.0), -89.0)						-- limit up / down angle to less than 90°
 
-	-- calculate orbit height
-	currentRadius = currentRadius + (GetDisabledControlNormal(0, 16) - GetDisabledControlNormal(0, 17)) * radiusStepLength
+		-- calculate orbit height
+		currentRadius = currentRadius + (GetDisabledControlNormal(0, 16) - GetDisabledControlNormal(0, 17)) * radiusStepLength
+	else
+		angleZ = angleZ - autoOrbit												-- around Z axis (left / right) (with autoOrbit)
+	end
+
 	currentRadius = math_max(math_min(currentRadius, maxRadius), minRadius)
 
 	if (trackedEntity and DoesEntityExist(trackedEntity)) then
@@ -212,13 +218,18 @@ end
 exports("UpdateCamPosition", UpdateCamPosition)
 
 -- set automatic orbit speed
-local function SetAutoOrbitSpeed(speed)
+local function SetAutoOrbitSpeed(speed, disablePlayerControls)
 	if (speed ~= nil and type(speed) ~= "number") then
 		LogError("Parameter \"speed\" needs to be a number or nil to reset!")
 		return
 	end
+	if (disablePlayerControls ~= nil and type(disablePlayerControls) ~= "boolean") then
+		LogError("Parameter \"disablePlayerControls\" needs to be a boolean or nil!")
+		return
+	end
 
 	autoOrbit = speed
+	disableControls = disablePlayerControls
 end
 exports("SetAutoOrbitSpeed", SetAutoOrbitSpeed)
 
