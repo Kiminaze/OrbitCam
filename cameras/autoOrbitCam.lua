@@ -22,12 +22,11 @@ RegisterCommand("autoorbit", function(src, args, raw)
 	end
 
 	local x, y, z = tonumber(args[2]), tonumber(args[3]), tonumber(args[4])
+	local offset = nil
 	if (x and y and z) then
 		offset = vector3(x, y, z)
 	end
 
-	local orbitSpeed = tonumber(args[5])
-	
 	orbitCam:StartOrbitCam(offset or DEFAULT_OFFSET, ped, nil, nil, nil, boneIndex)
-	orbitCam:SetAutoOrbitSpeed(orbitSpeed or DEFAULT_ORBIT_SPEED)
+	orbitCam:SetAutoOrbitSpeed(tonumber(args[5]) or DEFAULT_ORBIT_SPEED)
 end, false)
